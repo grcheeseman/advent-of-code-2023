@@ -2,23 +2,25 @@
 
 import { open } from "node:fs/promises";
 
-const goal = {
+const GOAL = {
   red: 12,
   green: 13,
   blue: 14,
 };
 
-function stringSplit(line) {
+function parseGame(line) {
   let gameInfo = {
     max: {},
-    power: 0,
+    id: 0,
     rounds: [],
   };
+  let firstSpace = line.indexOf(" ");
   let colonIndex = line.indexOf(":");
+  gameInfo.id = Number(line.substring(firstSpace + 1, colonIndex));
   let allRounds = line.substring(colonIndex + 1);
-  //   console.log(allRounds)
+  // console.log(allRounds)
   let individualRounds = allRounds.split(";");
-  //   console.log(individualRounds)
+  // console.log(individualRounds)
 
   for (let i = 0; i < individualRounds.length; i++) {
     let results = individualRounds[i].split(",");
@@ -30,7 +32,9 @@ function stringSplit(line) {
     };
     for (let g = 0; g < results.length; g++) {
       let result = results[g].trim().split(" ");
+      //   console.log(result)
       let count = Number(result[0]);
+      //   console.log(count)
       outcomes[result[1]] = count;
       if (gameInfo.max[result[1]]) {
         if (count > gameInfo.max[result[1]]) {
@@ -43,16 +47,36 @@ function stringSplit(line) {
     gameInfo.rounds.push(outcomes);
     // console.log(outcomes)
   }
+  //   gameInfo.sum = gameInfo.max.red * gameInfo.max.green * gameInfo.max.blue;
+
+  return gameInfo;
+}
+
+function isPossible(game) {
+  for (let key in GOAL) {
+    if (game.max[key] > GOAL[key]) {
+      return false;
+    }
+  }
+  return true;
 }
 
 async function main() {
   const inputFile = await open(process.argv[2]);
 
+  let games = [];
+
   for await (const line of inputFile.readLines()) {
-    const strings = stringSplit(line);
+    const game = parseGame(line);
+    games.push(game);
   }
 
-  // console.log(line);
+  //   console.log(games.length);
+  let possibleGames = games.filter(isPossible);
+//   console.log(possibleGames.length);
+
+  let sum = possibleGames.reduce((sum, game) => sum + game.id, 0);
+  console.log(sum);
 }
 
 main();
